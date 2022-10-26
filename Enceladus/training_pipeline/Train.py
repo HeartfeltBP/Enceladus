@@ -15,11 +15,12 @@ class TrainingPipeline():
     def run(self):
         set_all_seeds(self.config['seed'])
         self.strategy = get_strategy()
-        sweep_id = wandb.sweep(self.sweep_config, entity=self.config['wandb_entity'], project=self.config['wandb_project'])
-        wandb.agent(sweep_id, function=self._train, count=10)
+        # sweep_id = wandb.sweep(self.sweep_config, entity=self.config['wandb_entity'], project=self.config['wandb_project'])
+        # wandb.agent(sweep_id, function=self._train, count=10)
+        self._train()
         return
 
-    def _load_dataset(self, wandb_config):
+    def _load_dataset(self):
         AUTOTUNE = tf.data.experimental.AUTOTUNE
 
         options = tf.data.Options()
@@ -32,9 +33,9 @@ class TrainingPipeline():
         val = dataset['val'].prefetch(AUTOTUNE)
         test = dataset['test'].prefetch(AUTOTUNE)
 
-        train = train.shuffle(10).batch(wandb_config.batch_size)
-        val = val.shuffle(10).batch(wandb_config.batch_size)
-        test = test.batch(wandb_config.batch_size)
+        train = train.shuffle(10).batch(32)
+        val = val.shuffle(10).batch(32)
+        test = test.batch(32)
 
         train = train.repeat()
         val = val.repeat()
@@ -74,7 +75,10 @@ class TrainingPipeline():
             log_evaluation=True,
         )
 
-        callbacks = [tb_callback, es_callback, lr_callback, wandb_callback]
+        callbacks = [tb_callback, es_callback,
+                     lr_callback,
+                    #  wandb_callback,
+                    ]
         return callbacks
 
     def _train(self):
@@ -87,26 +91,32 @@ class TrainingPipeline():
             dropout_1=0.5,
             dropout_2=0.5,
         )
-        wandb.init(sync_tensorboard=True, config=default_config)
-        self.model_config['dropout_1'] = wandb.config.dropout_1
-        self.model_config['dropout_2'] = wandb.config.dropout_2
+        wandb.tensorboard.patch(root_logdir=self.config['out_dir'])
+        wandb.init(
+            sync_tensorboard=True,
+            entity=self.config['wandb_entity'],
+            project=self.config['wandb_project'],
+            group=str(self.config['wandb_project'])
+        )
+        self.model_config['dropout_1'] = 0.5
+        self.model_config['dropout_2'] = 0.5
         with self.strategy.scope():
             model = UNet(self.model_config).init()
             optimizer = tf.keras.optimizers.Adam(
-                learning_rate=wandb.config.learning_rate,
-                beta_1=wandb.config.beta_1,
-                beta_2=wandb.config.beta_2,
-                epsilon=wandb.config.epsilon,
+                learning_rate=1e-4,
+                beta_1=0.9,
+                beta_2=0.999,
+                epsilon=1e-8,
             )
             model.compile(
                 optimizer=optimizer,
                 loss='mse',
                 metrics=['mae'],
             )
-        dataset = self._load_dataset(wandb.config)
+        dataset = self._load_dataset()
 
-        steps_per_epoch = int((300000 * 0.70) / wandb.config.batch_size)
-        valid_steps = int((300000 * 0.15) / wandb.config.batch_size)
+        steps_per_epoch = int((300000 * 0.70) / 32)
+        valid_steps = int((300000 * 0.15) / 32)
 
         callbacks = self._get_callbacks(dataset, valid_steps)
 

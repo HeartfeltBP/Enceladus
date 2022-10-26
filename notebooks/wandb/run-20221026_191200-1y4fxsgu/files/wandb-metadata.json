@@ -1,0 +1,23 @@
+{
+    "os": "Linux-5.15.0-52-generic-x86_64-with-glibc2.17",
+    "python": "3.8.13",
+    "heartbeatAt": "2022-10-26T23:12:00.745944",
+    "startedAt": "2022-10-26T23:12:00.247549",
+    "docker": null,
+    "gpu": "NVIDIA GeForce RTX 3070",
+    "gpu_count": 1,
+    "cpu_count": 20,
+    "cuda": null,
+    "args": null,
+    "state": "running",
+    "program": "Enceladus/notebooks/workbench-jvsc-a15b6e58-d647-41ad-bc44-3c7e16c9b52cc8a1d394-92df-4b15-a0de-3a8afc91d301.ipynb",
+    "root": "/home/cam/Documents/Enceladus",
+    "git": {
+        "remote": "https://github.com/HeartfeltBP/Enceladus.git",
+        "commit": "1db01363e0eda4475dedeec47afb0dc2100a392c"
+    },
+    "email": "cjohnson23@gwu.edu",
+    "host": "bongo",
+    "username": "cam",
+    "executable": "/home/cam/.cache/pypoetry/virtualenvs/enceladus-KRa0cCkj-py3.8/bin/python"
+}
